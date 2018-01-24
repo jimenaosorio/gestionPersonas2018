@@ -11,8 +11,18 @@ import cl.model.Persona;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.annotation.Resource;
 import javax.ejb.EJB;
 import javax.inject.Inject;
+import javax.jms.Connection;
+import javax.jms.JMSException;
+import javax.jms.MapMessage;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.QueueConnectionFactory;
+import javax.jms.Session;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -30,6 +40,14 @@ public class ControladorServlet extends HttpServlet {
     
     @EJB
     private PersonaBeanLocal service;
+    
+    //Definición de instancias para MDB
+    @Resource(mappedName="jms/QueueFactory")
+    QueueConnectionFactory factory;
+    
+    @Resource(mappedName="jms/Queue") //importar desde javax.jms.Queue;
+    private Queue queue;
+    
     
 
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
@@ -101,6 +119,36 @@ public class ControladorServlet extends HttpServlet {
 
     protected void registro(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        try {
+            Connection con=factory.createConnection();
+            Session sesion=con.createSession(false,Session.AUTO_ACKNOWLEDGE);
+            MessageProducer msgp = sesion.createProducer(queue);
+            MapMessage mensaje=sesion.createMapMessage();
+            mensaje.setString("mensaje", "Hello from serlet");
+            msgp.send(mensaje);
+            msgp.close();
+            sesion.close();
+            con.close();
+        } catch (JMSException ex) {
+            Logger.getLogger(ControladorServlet.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        //Recuperar el formulario
+        String rut=request.getParameter("rut");
+        String nombre=request.getParameter("nombre");
+        String mail=request.getParameter("mail");
+        String clave1=request.getParameter("clave1");
+        String clave2=request.getParameter("clave2");
+        String errores="";
+        //Falta validar
+        
+        //Si no hay errores
+        if(errores.equals("")){
+            Persona p=new Persona(rut,nombre,"persona",mail,clave1,true);
+            service.add(p);
+            //Redireccionar al index
+            response.sendRedirect("index.jsp");
+        }
+        
 
     }
 
