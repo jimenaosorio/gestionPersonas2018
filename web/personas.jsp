@@ -1,3 +1,5 @@
+<%@page import="cl.beans.PersonaBeanLocal"%>
+<%@page import="javax.naming.InitialContext"%>
 <%@include file="template/header.jsp" %>
 
 
@@ -20,7 +22,16 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <c:forEach items="${applicationScope.data}" var="p">
+                        <%! private PersonaBeanLocal service;%>
+                        <%
+                            InitialContext ctx=new InitialContext();
+                            service = (PersonaBeanLocal) ctx.lookup("java:global/EjercicioMartes/PersonaBean!cl.beans.PersonaBeanLocal");
+                            //Payara lo toma así: java:global/Proyecto/Bean!ruta.Interface  - otro servidor puede ser distinto
+                            
+                        %>
+                        <c:set var="personas" scope="page" value="<%=service.getPersonaList()%>" />
+                        
+                        <c:forEach items="${pageScope.personas}" var="p">
                             <tr>
                                 <td>${p.rut}</td>
                                 <td>${p.nombre}</td>

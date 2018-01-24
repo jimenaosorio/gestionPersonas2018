@@ -5,11 +5,13 @@
  */
 package cl.controller;
 
-import cl.model.IUtilidad;
+import cl.beans.PersonaBeanLocal;
+
 import cl.model.Persona;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
+import javax.ejb.EJB;
 import javax.inject.Inject;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -24,8 +26,11 @@ import javax.servlet.http.HttpServletResponse;
 @WebServlet(name = "ControladorServlet", urlPatterns = {"/control.do"})
 public class ControladorServlet extends HttpServlet {
 
-    @Inject
-    private IUtilidad utilidad;
+   
+    
+    @EJB
+    private PersonaBeanLocal service;
+    
 
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -52,12 +57,8 @@ public class ControladorServlet extends HttpServlet {
         String rut = request.getParameter("rut");
         String activo = request.getParameter("activo");
         
-        List<Persona> list = (List<Persona>) 
-                            getServletContext().getAttribute("data");
-        
-        Persona p = utilidad.buscar(rut, list);
-        p.setActivo(activo.equalsIgnoreCase("Si"));
-        getServletContext().setAttribute("data", list);
+        service.editar(rut,activo.equalsIgnoreCase("si"));
+      
         response.sendRedirect("personas.jsp");
         
     }
@@ -68,10 +69,9 @@ public class ControladorServlet extends HttpServlet {
             HttpServletResponse response,
             String boton)
             throws ServletException, IOException {
-        List<Persona> list = (List<Persona>)
-                getServletContext().getAttribute("data");
+
         
-        Persona p = utilidad.buscar(boton, list);
+        Persona p=service.buscar(boton);
         request.setAttribute("persona", p);
         request.getRequestDispatcher("editarPersona.jsp").forward(request, response);
         
@@ -83,10 +83,10 @@ public class ControladorServlet extends HttpServlet {
         String rut = request.getParameter("rut");
         String clave = request.getParameter("clave");
 
-        List<Persona> list = (List<Persona>) getServletContext().getAttribute("data");
 
-        Persona p = utilidad.loguear(rut, clave, list);
 
+        Persona p=service.logear(rut, clave);
+        
         if (p == null) {
             request.setAttribute("msg", "Hubo un error al iniciar sesion :(");
             request.getRequestDispatcher("index.jsp").forward(request, response);
